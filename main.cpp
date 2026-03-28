@@ -1,6 +1,9 @@
 #include<iostream>
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
+#include<glm/glm/glm.hpp>
+#include <glm/glm/gtc/matrix_transform.hpp>
+#include <glm/glm/gtc/type_ptr.hpp>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -82,7 +85,7 @@ int main() {
 	};	
 
 
-
+	glfwWindowHint(GLFW_DEPTH_BITS, 24);
 	GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL Window", nullptr, nullptr);
 	if (window == nullptr) {
 		std::cerr << "Failed to create GLFW window" << std::endl;
@@ -93,6 +96,8 @@ int main() {
 	gladLoadGL();
 
 	glViewport(0, 0, 800, 600);
+	glEnable(GL_DEPTH_TEST);            // enable depth testing
+	glDepthFunc(GL_LESS);
 
 	std::string vertexShaderSource = readShaderFile("shaders/vertex.vert");
 	std::string fragmentShaderSource = readShaderFile("shaders/fragment.frag");
@@ -119,6 +124,12 @@ int main() {
 	
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
+
+	int nrAttributes;
+	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
+	std::cout << "Maximum number of vertex attributes supported: " << nrAttributes << std::endl;
+
+	GLint mvpLoc = glGetUniformLocation(shaderProgram, "uMVP");
 
 	Origin origin;
 
@@ -164,17 +175,35 @@ int main() {
 
 
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glfwSwapBuffers(window);
 
-	glEnable(GL_CULL_FACE);
+	/*glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);      
-	glFrontFace(GL_CCW);
+	glFrontFace(GL_CCW);*/
 
 	while(!glfwWindowShouldClose(window)) {
 		
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(shaderProgram);
+
+		// projection: perspective (change fov/aspect/near/far as needed)
+		int width = 0, height = 0;
+		glfwGetFramebufferSize(window, &width, &height);
+		float aspect = width > 0 ? (float)width / (float)height : 4.0f / 3.0f;
+		glm::mat4 projection = glm::perspective(glm::radians(60.0f), aspect, 0.1f, 100.0f);
+
+		// view: camera at (0,0,3) looking at origin
+		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),
+			glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::vec3(0.0f, 1.0f, 0.0f));
+
+		// model: identity or transform your objects (rotate for demo)
+		float t = (float)glfwGetTime();
+		glm::mat4 model = glm::rotate(glm::mat4(1.0f), t * glm::radians(15.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+		glm::mat4 mvp = projection * view * model;
+		glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
 
 		origin.draw();
 		
