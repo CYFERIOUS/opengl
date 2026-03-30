@@ -1,9 +1,9 @@
 #include<iostream>
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
-#include<glm/glm/glm.hpp>
-#include <glm/glm/gtc/matrix_transform.hpp>
-#include <glm/glm/gtc/type_ptr.hpp>
+#include<glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -52,7 +52,12 @@ static void printProgramLog(GLuint program) {
 
  using Vertex3angle = VertexTriangle;
 
+ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+ {
+	 // Update GL viewport to new framebuffer size
+	 glViewport(0, 0, width, height);
 
+ }
 
 int main() {
 	// Initialize GLFW
@@ -67,19 +72,19 @@ int main() {
 	Vertex3angle triangles [] = {
 
 		// Triangle 0 (blue, opaque) // 0 deg in radians
-		{ { -0.3f, -0.3f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f }, 0.0f },
-		{ {  0.3f, -0.3f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f }, 0.0f },
-		{ {  0.0f,  0.3f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f }, 0.0f },
+		{ { -0.3f, -0.3f, 0.3f }, { 0.0f, 0.0f, 1.0f, 1.0f }, 0.0f },
+		{ {  0.3f, -0.3f, 0.3f }, { 0.0f, 0.0f, 1.0f, 1.0f }, 0.0f },
+		{ {  0.0f,  0.3f, 0.3f }, { 0.0f, 0.0f, 1.0f, 1.0f }, 0.0f },
 
 		// Triangle 1 (red, rotated 30 degrees) // 30 deg in radians
-		{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.4f },  0.0f },
-		{ {  0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.4f }, 0.0f },
-		{ {  0.0f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.4f }, 0.0f },
+		{ { -0.5f, -0.5f, 0.5f }, { 1.0f, 0.0f, 0.0f, 0.4f },  0.0f },
+		{ {  0.5f, -0.5f, 0.5f }, { 1.0f, 0.0f, 0.0f, 0.4f }, 0.0f },
+		{ {  0.0f,  0.5f, 0.5f }, { 1.0f, 0.0f, 0.0f, 0.4f }, 0.0f },
 
 		 // Triangle 2 (green, semi-transparent) // 60 deg in radians
-		{ { -0.8f, -0.8f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.6f }, 0.0f },
-		{ {  0.8f, -0.8f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.6f }, 0.0f },
-		{ {  0.0f,  0.8f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.6f }, 0.0f }
+		{ { -0.8f, -0.8f, 0.8f }, { 0.0f, 1.0f, 0.0f, 0.6f }, 0.0f },
+		{ {  0.8f, -0.8f, 0.8f }, { 0.0f, 1.0f, 0.0f, 0.6f }, 0.0f },
+		{ {  0.0f,  0.8f, 0.8f }, { 0.0f, 1.0f, 0.0f, 0.6f }, 0.0f }
 
 		
 	};	
@@ -93,9 +98,10 @@ int main() {
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	gladLoadGL();
+	
 
-	glViewport(0, 0, 800, 600);
 	glEnable(GL_DEPTH_TEST);            // enable depth testing
 	glDepthFunc(GL_LESS);
 
