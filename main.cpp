@@ -7,43 +7,11 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include "Shaders.h"
 #include "Origin.h"
 
 
-std::string readShaderFile(const std::string& filePath) {
-	std::ifstream fileStream(filePath, std::ios::in);
-	if (!fileStream.is_open()) {
-		std::cerr << "ERROR: Failed to open shader file: " << filePath << std::endl;
-		return "";
-	}
 
-	std::stringstream sstr;
-	sstr << fileStream.rdbuf();
-	fileStream.close();
-
-	return sstr.str();
-}
-
-
-static void printShaderLog(GLuint shader, const char* name) {
-	GLint success = 0;
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar infoLog[1024];
-		glGetShaderInfoLog(shader, sizeof(infoLog), nullptr, infoLog);
-		std::cerr << "ERROR: Shader compile failed (" << name << ")\n" << infoLog << std::endl;
-	}
-}
-
-static void printProgramLog(GLuint program) {
-	GLint success = 0;
-	glGetProgramiv(program, GL_LINK_STATUS, &success);
-	if (!success) {
-		GLchar infoLog[1024];
-		glGetProgramInfoLog(program, sizeof(infoLog), nullptr, infoLog);
-		std::cerr << "ERROR: Program link failed\n" << infoLog << std::endl;
-	}
-}
  struct VertexTriangle {
 	GLfloat pos[3];
 	GLfloat color[4]; // RGBA
@@ -58,6 +26,7 @@ static void printProgramLog(GLuint program) {
 	 glViewport(0, 0, width, height);
 
  }
+
 
 int main() {
 	// Initialize GLFW
@@ -105,35 +74,9 @@ int main() {
 	glEnable(GL_DEPTH_TEST);            // enable depth testing
 	glDepthFunc(GL_LESS);
 
-	std::string vertexShaderSource = readShaderFile("shaders/vertex.vert");
-	std::string fragmentShaderSource = readShaderFile("shaders/fragment.frag");
-
-
-
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	const GLchar* sourceVertex = vertexShaderSource.c_str();
-	glShaderSource(vertexShader, 1, &sourceVertex, nullptr);
-	glCompileShader(vertexShader);
-	printShaderLog(vertexShader, "VERTEX");
-
-	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	const GLchar* sourceFragment = fragmentShaderSource.c_str();
-	glShaderSource(fragmentShader, 1, &sourceFragment, nullptr);
-	glCompileShader(fragmentShader);
-	printShaderLog(fragmentShader, "FRAGMENT");
-
-	GLuint shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-	printProgramLog(shaderProgram);
-	
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-
-	int nrAttributes;
-	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
-	std::cout << "Maximum number of vertex attributes supported: " << nrAttributes << std::endl;
+	Shaders shaders("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl");
+	GLuint shaderProgram = shaders.getProgram();
+	shaders.use(shaderProgram);
 
 	GLint mvpLoc = glGetUniformLocation(shaderProgram, "uMVP");
 
@@ -211,14 +154,22 @@ int main() {
 		glm::mat4 mvp = projection * view * model;
 		glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
 
-		origin.draw();
+	
 		
+
 		// draw triangles
 		glBindVertexArray(VAO_tri);
 		glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(sizeof(triangles) / sizeof(triangles[0])));
 
-
-		//glDrawArrays(GL_POINTS, 0, 3);
+		// Draw origin with identity model (static)
+		glm::mat4 PV = projection * view;
+		glm::mat4 mvpOrigin = PV * glm::mat4(1.0f);
+		glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvpOrigin));
+		// ensure same shader is active when origin.draw() relies on this uniform
+		glUseProgram(shaderProgram);
+		origin.draw();
+		
+		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
