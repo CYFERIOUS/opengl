@@ -143,6 +143,7 @@
     <None Include="shaders\vertex_shader.glsl" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="libraries\include\stb\stb_image.h" />
     <ClInclude Include="Origin.h" />
     <ClInclude Include="Shaders.h" />
   </ItemGroup>

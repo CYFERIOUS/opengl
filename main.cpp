@@ -7,6 +7,12 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+
+#include <cstddef>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
+
 #include "Shaders.h"
 #include "Origin.h"
 
@@ -15,7 +21,7 @@
  struct VertexTriangle {
 	GLfloat pos[3];
 	GLfloat color[4]; // RGBA
-	GLfloat angle;
+	GLfloat tex[2];   // texture coordinate
 };
 
  using Vertex3angle = VertexTriangle;
@@ -27,6 +33,41 @@
 
  }
 
+ static void loadTexturesFromFiles(const char* texturePaths[], int count, GLuint textures[])
+ {
+	 // flip image vertically to match OpenGL coordinates (common)
+	 stbi_set_flip_vertically_on_load(1);
+
+	 for (int i = 0; i < count; ++i) {
+		 int w, h, channels;
+		 unsigned char* data = stbi_load(texturePaths[i], &w, &h, &channels, 0);
+		 if (!data) {
+			 std::cerr << "Failed to load texture: " << texturePaths[i] << std::endl;
+			 unsigned char fallback[4] = { 255, 0, 255, 255 };
+			 glBindTexture(GL_TEXTURE_2D, textures[i]);
+			 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, fallback);
+			 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			 continue;
+		 }
+
+		 GLenum format = GL_RGB;
+		 if (channels == 1) format = GL_RED;
+		 else if (channels == 3) format = GL_RGB;
+		 else if (channels == 4) format = GL_RGBA;
+
+		 glBindTexture(GL_TEXTURE_2D, textures[i]);
+		 glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, data);
+		 glGenerateMipmap(GL_TEXTURE_2D);
+
+		 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		 stbi_image_free(data);
+	 }
+ }
 
 int main() {
 	// Initialize GLFW
@@ -40,20 +81,20 @@ int main() {
 
 	Vertex3angle triangles [] = {
 
-		// Triangle 0 (blue, opaque) // 0 deg in radians
-		{ { -0.3f, -0.3f, 0.3f }, { 0.0f, 0.0f, 1.0f, 1.0f }, 0.0f },
-		{ {  0.3f, -0.3f, 0.3f }, { 0.0f, 0.0f, 1.0f, 1.0f }, 0.0f },
-		{ {  0.0f,  0.3f, 0.3f }, { 0.0f, 0.0f, 1.0f, 1.0f }, 0.0f },
+		// Face 0 - red (opaque)
+		{ {  0.0f,  0.6f,  0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f }, { 0.5f, 1.0f } }, // apex
+		{ { -0.5f, -0.4f, -0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } }, // B0
+		{ {  0.5f, -0.4f, -0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } }, // B1
 
-		// Triangle 1 (red, rotated 30 degrees) // 30 deg in radians
-		{ { -0.5f, -0.5f, 0.5f }, { 1.0f, 0.0f, 0.0f, 0.4f },  0.0f },
-		{ {  0.5f, -0.5f, 0.5f }, { 1.0f, 0.0f, 0.0f, 0.4f }, 0.0f },
-		{ {  0.0f,  0.5f, 0.5f }, { 1.0f, 0.0f, 0.0f, 0.4f }, 0.0f },
+		// Face 1 - green (semi-transparent)
+		{ {  0.0f,  0.6f,  0.0f }, { 0.0f, 1.0f, 0.0f, 0.6f }, { 0.5f, 1.0f } }, // apex
+		{ {  0.5f, -0.4f, -0.5f }, { 0.0f, 1.0f, 0.0f, 0.6f }, { 0.0f, 0.0f } }, // B1
+		{ {  0.0f, -0.4f,  0.6f }, { 0.0f, 1.0f, 0.0f, 0.6f }, { 1.0f, 0.0f } }, // B2
 
-		 // Triangle 2 (green, semi-transparent) // 60 deg in radians
-		{ { -0.8f, -0.8f, 0.8f }, { 0.0f, 1.0f, 0.0f, 0.6f }, 0.0f },
-		{ {  0.8f, -0.8f, 0.8f }, { 0.0f, 1.0f, 0.0f, 0.6f }, 0.0f },
-		{ {  0.0f,  0.8f, 0.8f }, { 0.0f, 1.0f, 0.0f, 0.6f }, 0.0f }
+		// Face 2 - blue (opaque)
+		{ {  0.0f,  0.6f,  0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f }, { 0.5f, 1.0f } }, // apex
+		{ {  0.0f, -0.4f,  0.6f }, { 0.0f, 0.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } }, // B2
+		{ { -0.5f, -0.4f, -0.5f }, { 0.0f, 0.0f, 1.0f, 1.0f }, { 1.0f, 0.0f } }  // B0
 
 		
 	};	
@@ -79,6 +120,7 @@ int main() {
 	shaders.use(shaderProgram);
 
 	GLint mvpLoc = glGetUniformLocation(shaderProgram, "uMVP");
+	GLint texLoc = glGetUniformLocation(shaderProgram, "uTex");
 
 	Origin origin;
 
@@ -86,8 +128,6 @@ int main() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	// Get location of the alpha uniform
-	//GLint alphaLoc = glGetUniformLocation(shaderProgram, "uAlpha");
 
 	GLuint  VAO_tri, VBO_tri;
 	GLuint  VAO_lines = 0, VBO_lines = 0;
@@ -110,18 +150,30 @@ int main() {
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, stride3angles, (GLvoid*)offsetof(Vertex3angle, color));
 	glEnableVertexAttribArray(1);
 
-	// angle attribute (location = 2)
-	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, stride3angles, (GLvoid*)offsetof(Vertex3angle, angle));
-	glEnableVertexAttribArray(2);
+	// texcoord (location = 3)
+	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride3angles, (GLvoid*)offsetof(Vertex3angle, tex));
+	glEnableVertexAttribArray(3);
 
 	// unbind
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
+	// texture file paths (replace with your images)
+	const char* texturePaths[3] = {
+		"images/horus.png",
+		"images/kamon.png",
+		"images/ra.png"
+	};
 	
-	//glEnable(GL_PROGRAM_POINT_SIZE);
-	//glPointSize(95);
+	GLuint textures[3];
+	glGenTextures(3, textures);
 
+	// load textures using helper function
+	loadTexturesFromFiles(texturePaths, 3, textures);
+
+	// set sampler once to texture unit 0 (if shader expects sampler)
+	shaders.use(shaderProgram);
+	if (texLoc >= 0) glUniform1i(texLoc, 0);
 
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -159,7 +211,17 @@ int main() {
 
 		// draw triangles
 		glBindVertexArray(VAO_tri);
-		glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(sizeof(triangles) / sizeof(triangles[0])));
+		// bind and draw per-face textures (one draw call per face)
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textures[0]);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		glBindTexture(GL_TEXTURE_2D, textures[1]);
+		glDrawArrays(GL_TRIANGLES, 3, 3);
+
+		glBindTexture(GL_TEXTURE_2D, textures[2]);
+		glDrawArrays(GL_TRIANGLES, 6, 3);
+
 
 		// Draw origin with identity model (static)
 		glm::mat4 PV = projection * view;
