@@ -157,6 +157,53 @@
 	 }
  }
 
+ 
+ static void PaintCircleBresenham(std::vector<VertexSquare>& verts, int cols, int rows,
+	 int centerX, int centerY, int radius, const GLfloat color[4])
+ {
+	 // No-op for non-positive radius
+	 if (radius <= 0) return;
+
+	 // Helper to set all 4 vertices of a cell to 'color' if inside grid.
+	 auto setCellColor = [&](int cx, int cy) {
+		 if (cx < 0 || cx >= cols || cy < 0 || cy >= rows) return;
+		 size_t cellIndex = static_cast<size_t>(cy) * static_cast<size_t>(cols) + static_cast<size_t>(cx);
+		 size_t base = cellIndex * 4; // 4 vertices per square
+		 for (size_t i = 0; i < 4; ++i) {
+			 verts[base + i].color[0] = color[0];
+			 verts[base + i].color[1] = color[1];
+			 verts[base + i].color[2] = color[2];
+			 verts[base + i].color[3] = color[3];
+		 }
+		 };
+
+	 int x = 0;
+	 int y = radius;
+	 int d = 1 - radius; // initial decision parameter (midpoint algorithm)
+
+	 while (x <= y) {
+		 // plot the eight symmetric points
+		 setCellColor(centerX + x, centerY + y);
+		 setCellColor(centerX - x, centerY + y);
+		 setCellColor(centerX + x, centerY - y);
+		 setCellColor(centerX - x, centerY - y);
+
+		 setCellColor(centerX + y, centerY + x);
+		 setCellColor(centerX - y, centerY + x);
+		 setCellColor(centerX + y, centerY - x);
+		 setCellColor(centerX - y, centerY - x);
+
+		 if (d < 0) {
+			 d += 2 * x + 3;
+		 }
+		 else {
+			 d += 2 * (x - y) + 5;
+			 --y;
+		 }
+		 ++x;
+	 }
+ }
+
  // Recreate or update the grid VAO/VBO/EBO to match the current viewport.
 // Call after glViewport(...) has been applied.
  static void RecreateGridForViewport(GLFWwindow* /*window*/)
@@ -241,6 +288,7 @@ int main() {
 
 	// paint a horizontal Bresenham line across the row (cell coords 0..cols-1)
 	PaintLineBresenham(g_gridVerts, g_gridCols, g_gridRows, 25, 12, g_gridCols - 10, 25, g_lineColor);
+	PaintCircleBresenham(g_gridVerts, g_gridCols, g_gridRows, 30, 30, 20, g_lineColor);
 
 	// upload the painted grid to GPU
 	CreateSquareVAO(g_VAO_sq,g_VBO_sq,g_EBO_sq, g_gridVerts.data(), g_gridVerts.size(), g_gridIndices.data(), g_gridIndices.size());
