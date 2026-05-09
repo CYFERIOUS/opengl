@@ -139,6 +139,7 @@
     <ClCompile Include="Shaders.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include=".gitignore" />
     <None Include="shaders\fragment_shader.glsl" />
     <None Include="shaders\vertex_shader.glsl" />
   </ItemGroup>
@@ -146,6 +147,11 @@
     <ClInclude Include="libraries\include\stb\stb_image.h" />
     <ClInclude Include="Origin.h" />
     <ClInclude Include="Shaders.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="images\horus.png" />
+    <Image Include="images\kamon.png" />
+    <Image Include="images\ra.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

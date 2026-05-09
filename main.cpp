@@ -33,6 +33,27 @@
 
  }
 
+ // Simple WASD camera movement (frame-rate independent).
+// Moves cameraPos in world-space using cameraFront and cameraUp.
+ static void processKeyboardMove(GLFWwindow* window, glm::vec3& cameraPos, const glm::vec3& cameraFront, const glm::vec3& cameraUp, float deltaTime)
+ {
+	 const float speed = 2.5f; // units per second
+	 float velocity = speed * deltaTime;
+
+	 // forward / backward
+	 if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) cameraPos += cameraFront * velocity;
+	 if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) cameraPos -= cameraFront * velocity;
+
+	 // right / left
+	 glm::vec3 right = glm::normalize(glm::cross(cameraFront, cameraUp));
+	 if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) cameraPos += right * velocity;
+	 if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) cameraPos -= right * velocity;
+
+	 // optional: up / down (space / left ctrl)
+	 if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) cameraPos += cameraUp * velocity;
+	 if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) cameraPos -= cameraUp * velocity;
+ }
+
  static void loadTexturesFromFiles(const char* texturePaths[], int count, GLuint textures[])
  {
 	 // flip image vertically to match OpenGL coordinates (common)
@@ -76,7 +97,14 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+	// Camera state
+	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+	glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
+	// timing for smooth movement
+	float lastFrame = 0.0f;
+	float deltaTime = 0.0f;
 	
 
 	Vertex3angle triangles [] = {
@@ -184,6 +212,15 @@ int main() {
 	glFrontFace(GL_CCW);*/
 
 	while(!glfwWindowShouldClose(window)) {
+
+
+		// timing
+		float currentFrame = static_cast<float>(glfwGetTime());
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
+		// handle WASD movement (updates cameraPos)
+		processKeyboardMove(window, cameraPos, cameraFront, cameraUp, deltaTime);
 		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(shaderProgram);
@@ -195,9 +232,12 @@ int main() {
 		glm::mat4 projection = glm::perspective(glm::radians(60.0f), aspect, 0.1f, 100.0f);
 
 		// view: camera at (0,0,3) looking at origin
-		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),
+		/*glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),
 			glm::vec3(0.0f, 0.0f, 0.0f),
-			glm::vec3(0.0f, 1.0f, 0.0f));
+			glm::vec3(0.0f, 1.0f, 0.0f));*/
+
+		// view: derived from camera state
+		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
 		// model: identity or transform your objects (rotate for demo)
 		float t = (float)glfwGetTime();

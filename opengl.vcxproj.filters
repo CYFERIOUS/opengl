@@ -31,6 +31,7 @@
   <ItemGroup>
     <None Include="shaders\fragment_shader.glsl" />
     <None Include="shaders\vertex_shader.glsl" />
+    <None Include=".gitignore" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Origin.h">
@@ -42,5 +43,16 @@
     <ClInclude Include="libraries\include\stb\stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="images\horus.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="images\kamon.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="images\ra.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>
