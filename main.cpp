@@ -11,10 +11,13 @@
 #include <cstddef>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb/stb_image.h"
+#include <stb_image.h>
 
 #include "Shaders.h"
 #include "Origin.h"
+#include "GltfModel.h"
+
+
 
 
 
@@ -211,6 +214,11 @@ int main() {
 	glCullFace(GL_BACK);      
 	glFrontFace(GL_CCW);*/
 
+	GltfModel gltfModel;
+	if (!gltfModel.load("models/leonardo/scene.gltf")) {
+		std::cerr << "Continuing without glTF model" << std::endl;
+	}
+
 	while(!glfwWindowShouldClose(window)) {
 
 
@@ -262,12 +270,13 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, textures[2]);
 		glDrawArrays(GL_TRIANGLES, 6, 3);
 
+		// Draw glTF model (node transforms already in drawable world matrices)
+		glm::mat4 PV = projection * view;
+		gltfModel.draw(mvpLoc, PV);
 
 		// Draw origin with identity model (static)
-		glm::mat4 PV = projection * view;
 		glm::mat4 mvpOrigin = PV * glm::mat4(1.0f);
 		glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvpOrigin));
-		// ensure same shader is active when origin.draw() relies on this uniform
 		glUseProgram(shaderProgram);
 		origin.draw();
 		

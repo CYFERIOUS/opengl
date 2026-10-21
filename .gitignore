@@ -1,4 +1,26 @@
-# Build artifacts
+# Visual Studio / MSBuild
+.vs/
+**/x64/
+**/x86/
+**/Win32/
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.VC.opendb
+ipch/
+*.aps
+*.ncb
+*.sdf
+*.opensdf
+*.dbmdl
+
+# Build / link artifacts
 *.o
 *.obj
 *.exe
@@ -6,42 +28,50 @@
 *.lib
 *.a
 *.so
+*.dylib
 *.out
-*.bin
-build/
-bin/
-Debug/
-Release/
-
-# IDE-specific files (e.g., Visual Studio)
-.vs/
-*.vcxproj.user
-*.suo
-*.sln.docstates
-*.opendb
-ipch/
-*.aps
-*.ncb
-*.sdf
-*.tlog
-*.log
 *.ilk
 *.pdb
+*.idb
+*.exp
+*.iobj
+*.ipdb
+*.tlog
+*.log
+*.recipe
+*.lastbuildstate
 
-# macOS specific files
+# vcpkg (manifest mode keeps vcpkg.json; ignore installed packages)
+vcpkg_installed/
+vcpkg_installed/**
+vcpkg/buildtrees/
+vcpkg/packages/
+vcpkg/downloads/
+
+# CMake (if used later)
+CMakeFiles/
+CMakeCache.txt
+cmake-build-*/
+compile_commands.json
+install_manifest.txt
+
+# Shaders compiled to SPIR-V (Vulkan); keep .glsl sources
+*.spv
+
+# OS junk
 .DS_Store
-
-# Linux specific files
+Thumbs.db
+Desktop.ini
 *~
 
-# Temporary files
+# Editor / temp
 *.tmp
 *.bak
+*.swp
+*~
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
 
-# Dependency modules (if using submodules or package managers)
-# For example, if you are using vcpkg for dependencies and storing them in the project root:
-# vcpkg/
-# installed/
-
-# Compiled shader files (if applicable)
-*.spv
+# Do NOT ignore glTF binary buffers (models/**/scene.bin)
+# Use folder-scoped rules above for build outputs instead of a global *.bin
