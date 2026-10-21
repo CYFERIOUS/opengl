@@ -1,47 +1,66 @@
-# Build artifacts
-*.o
+# =======================================================================
+# 1. Visual Studio & MSBuild Artifacts
+# =======================================================================
+.vs/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.VisualSTudio.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+*.sln.docstates
+*.suo
+*.user
+*.ncb
+*.sdf
+*.opensdf
+*.db
+*.opendb
+
+# =======================================================================
+# 2. CMake Build Directories (If using CMake)
+# =======================================================================
+build/
+CMakeCache.txt
+CMakeFiles/
+CMakeSettings.json
+cmake_install.cmake
+Makefile
+
+# =======================================================================
+# 3. C++ Compilation Artifacts
+# =======================================================================
 *.obj
+*.o
+*.pdb
+*.ilk
 *.exe
 *.dll
 *.lib
-*.a
 *.so
+*.a
 *.out
-*.bin
-build/
-bin/
-Debug/
-Release/
 
-# IDE-specific files (e.g., Visual Studio)
-.vs/
-*.vcxproj.user
-*.suo
-*.sln.docstates
-*.opendb
-ipch/
-*.aps
-*.ncb
-*.sdf
-*.tlog
-*.log
-*.ilk
-*.pdb
+# =======================================================================
+# 4. Dependency Managers (If applicable)
+# =======================================================================
+vcpkg_installed/
+.vcpkg/
 
-# macOS specific files
+# =======================================================================
+# 5. OS & IDE Specific
+# =======================================================================
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
 
-# Linux specific files
-*~
-
-# Temporary files
-*.tmp
-*.bak
-
-# Dependency modules (if using submodules or package managers)
-# For example, if you are using vcpkg for dependencies and storing them in the project root:
-# vcpkg/
-# installed/
-
-# Compiled shader files (if applicable)
-*.spv
+# =======================================================================
+# 6. OpenGL & Asset Exceptions (What you SHOULD keep)
+# =======================================================================
+# Do NOT ignore your shaders, textures, or models. 
+# Ensure your asset folders are tracked by Git:
+!/shaders/
+!/assets/
+!/textures/
