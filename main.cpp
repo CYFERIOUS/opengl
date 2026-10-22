@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <cmath>
 
 #include <cstddef>
 
@@ -29,11 +30,65 @@
 
  using Vertex3angle = VertexTriangle;
 
+ // Mouse-look state shared with the GLFW cursor callback via window user pointer.
+ struct CameraLookState {
+	 glm::vec3* cameraFront = nullptr;
+	 float yaw = -90.0f;   // degrees; -90 looks down -Z
+	 float pitch = 0.0f;   // degrees
+	 float lastX = 400.0f;
+	 float lastY = 300.0f;
+	 bool firstMouse = true;
+	 float sensitivity = 0.1f;
+ };
+
+ static void updateCameraFront(CameraLookState& look)
+ {
+	 if (!look.cameraFront) {
+		 return;
+	 }
+	 const float yawRad = glm::radians(look.yaw);
+	 const float pitchRad = glm::radians(look.pitch);
+	 glm::vec3 front;
+	 front.x = cosf(yawRad) * cosf(pitchRad);
+	 front.y = sinf(pitchRad);
+	 front.z = sinf(yawRad) * cosf(pitchRad);
+	 *look.cameraFront = glm::normalize(front);
+ }
+
  static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
  {
 	 // Update GL viewport to new framebuffer size
 	 glViewport(0, 0, width, height);
 
+ }
+
+ static void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+ {
+	 auto* look = static_cast<CameraLookState*>(glfwGetWindowUserPointer(window));
+	 if (!look || !look->cameraFront) {
+		 return;
+	 }
+
+	 // Skip the first event so the initial cursor position does not create a huge delta.
+	 if (look->firstMouse) {
+		 look->lastX = static_cast<float>(xpos);
+		 look->lastY = static_cast<float>(ypos);
+		 look->firstMouse = false;
+		 return;
+	 }
+
+	 const float xoffset = static_cast<float>(xpos) - look->lastX;
+	 const float yoffset = look->lastY - static_cast<float>(ypos); // mouse up -> look up
+	 look->lastX = static_cast<float>(xpos);
+	 look->lastY = static_cast<float>(ypos);
+
+	 look->yaw += xoffset * look->sensitivity;
+	 look->pitch += yoffset * look->sensitivity;
+
+	 if (look->pitch > 89.0f) look->pitch = 89.0f;
+	 if (look->pitch < -89.0f) look->pitch = -89.0f;
+
+	 updateCameraFront(*look);
  }
 
  // Simple WASD camera movement (frame-rate independent).
@@ -55,6 +110,11 @@
 	 // optional: up / down (space / left ctrl)
 	 if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) cameraPos += cameraUp * velocity;
 	 if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) cameraPos -= cameraUp * velocity;
+
+	 // Escape releases the cursor so you can leave the window easily.
+	 if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+		 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	 }
  }
 
  static void loadTexturesFromFiles(const char* texturePaths[], int count, GLuint textures[])
@@ -105,6 +165,10 @@ int main() {
 	glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
+	CameraLookState cameraLook;
+	cameraLook.cameraFront = &cameraFront;
+	updateCameraFront(cameraLook); // sync front with initial yaw/pitch
+
 	// timing for smooth movement
 	float lastFrame = 0.0f;
 	float deltaTime = 0.0f;
@@ -140,6 +204,9 @@ int main() {
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetWindowUserPointer(window, &cameraLook);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // capture mouse for FPS look
 	gladLoadGL();
 	
 
@@ -226,6 +293,13 @@ int main() {
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+
+		// Click to re-capture mouse after Escape released it.
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS
+			&& glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			cameraLook.firstMouse = true; // avoid jump on re-capture
+		}
 
 		// handle WASD movement (updates cameraPos)
 		processKeyboardMove(window, cameraPos, cameraFront, cameraUp, deltaTime);
